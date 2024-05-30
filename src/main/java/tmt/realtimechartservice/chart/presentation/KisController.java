@@ -20,8 +20,18 @@ public class KisController {
 		return kisSocketService.sendMessageToWebSocketServer();
 	}
 
+	@GetMapping("/real-time/ask-price")
+	public Mono<Void> connectKisWebSocketAskPrice() {
+		return kisSocketService.sendMessageToWebSocketServerToAskingPrice();
+	}
+
 	@GetMapping(value = "/stream/{stockCode}", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
 	public Flux<String> stream(@PathVariable("stockCode") String stockCode){
 		return redisPubSubServiceImp.getMessage(stockCode);
+	}
+
+	@GetMapping(value = "/stream/ask-bid/{stockCode}", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+	public Flux<String> streamAskBid(@PathVariable("stockCode") String stockCode){
+		return redisPubSubServiceImp.getAskPrice(stockCode);
 	}
 }

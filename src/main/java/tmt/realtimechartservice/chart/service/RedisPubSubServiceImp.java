@@ -8,7 +8,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Sinks;
 
 @Service
-public class RedisPubSubServiceImp implements RedisPubSubService{
+public class RedisPubSubServiceImp implements RedisPubSubService {
 
 	private final Sinks.Many<String> sink;
 
@@ -28,5 +28,13 @@ public class RedisPubSubServiceImp implements RedisPubSubService{
 				.filter(message -> message.startsWith("stock:" + stockCode))
 				.mergeWith(Flux.interval(Duration.ofSeconds(10)).map(tick -> "keep-alive"))
 				.doOnCancel(() -> System.out.println("Client disconnected")); // 클라이언트 연결 해제 시 로그 출력
+	}
+
+	@Override
+	public Flux<String> getAskPrice(String stockCode) {
+		return sink.asFlux()
+				.filter(message -> message.startsWith("stock:askPrice-" + stockCode))
+				.mergeWith(Flux.interval(Duration.ofSeconds(10)).map(tick -> "keep-alive"))
+				.doOnCancel(() -> System.out.println("Client disconnected"));
 	}
 }
