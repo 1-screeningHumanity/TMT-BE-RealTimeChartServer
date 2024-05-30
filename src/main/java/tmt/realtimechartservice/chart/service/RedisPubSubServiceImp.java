@@ -23,7 +23,7 @@ public class RedisPubSubServiceImp implements RedisPubSubService {
 	}
 
 	@Override
-	public Flux<String> getMessage(String stockCode) {
+	public Flux<String> getRealTimePrice(String stockCode) {
 		return sink.asFlux()
 				.filter(message -> message.startsWith("stock:" + stockCode))
 				.mergeWith(Flux.interval(Duration.ofSeconds(10)).map(tick -> "keep-alive"))

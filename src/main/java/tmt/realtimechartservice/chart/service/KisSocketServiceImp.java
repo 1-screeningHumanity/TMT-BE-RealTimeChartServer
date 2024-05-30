@@ -24,7 +24,7 @@ public class KisSocketServiceImp implements KisSocketService {
 	private String socketKey;
 
 	// 실시간 주식에 사용하는 상위 20개 코드 리스트
-	private List<String> stockCodes = List.of(
+	private final List<String> stockCodes = List.of(
 			"005930", "000660", "373220", "207940", "005380",
 			"005935", "000270", "068270", "005490", "105560",
 			"035420", "006400", "051910", "028260", "055550",
@@ -35,7 +35,7 @@ public class KisSocketServiceImp implements KisSocketService {
 	}
 
 	@Override
-	public Mono<Void> sendMessageToWebSocketServer() {
+	public Mono<Void> sendMessageToWebSocketServerToRealTimePrice() {
 		URI uri = UriComponentsBuilder.fromUriString(
 				KisUrls.REAL_TIME_EXECUTION_PRICE_PATH.getFullUrl()).build().toUri();
 

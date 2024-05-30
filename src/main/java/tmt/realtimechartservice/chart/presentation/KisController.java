@@ -17,7 +17,7 @@ public class KisController {
 	private final RedisPubSubServiceImp redisPubSubServiceImp;
 	@GetMapping("/real-time")
 	public Mono<Void> connectKisWebSocketStockPrice() {
-		return kisSocketService.sendMessageToWebSocketServer();
+		return kisSocketService.sendMessageToWebSocketServerToRealTimePrice();
 	}
 
 	@GetMapping("/real-time/ask-price")
@@ -26,8 +26,8 @@ public class KisController {
 	}
 
 	@GetMapping(value = "/stream/{stockCode}", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-	public Flux<String> stream(@PathVariable("stockCode") String stockCode){
-		return redisPubSubServiceImp.getMessage(stockCode);
+	public Flux<String> streamRealTime(@PathVariable("stockCode") String stockCode){
+		return redisPubSubServiceImp.getRealTimePrice(stockCode);
 	}
 
 	@GetMapping(value = "/stream/ask-bid/{stockCode}", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
