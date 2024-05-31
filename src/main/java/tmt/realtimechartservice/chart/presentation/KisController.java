@@ -30,7 +30,7 @@ public class KisController {
 		return redisPubSubServiceImp.getRealTimePrice(stockCode);
 	}
 
-	@GetMapping(value = "/stream/ask-bid/{stockCode}", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+	@GetMapping(value = "/stream/{stockCode}/asking-price", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
 	public Flux<String> streamAskBid(@PathVariable("stockCode") String stockCode){
 		return redisPubSubServiceImp.getAskPrice(stockCode);
 	}
