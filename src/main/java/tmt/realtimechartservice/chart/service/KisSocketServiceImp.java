@@ -23,18 +23,25 @@ public class KisSocketServiceImp implements KisSocketService {
 	@Value("${kis.key.socketKey}")
 	private String socketKey;
 
+	// 실시간 주식에 사용하는 상위 20개 코드 리스트
+	private final List<String> stockCodes = List.of(
+			"005930", "000660", "373220", "207940", "005380",
+			"005935", "000270", "068270", "005490", "105560",
+			"035420", "006400", "051910", "028260", "055550",
+			"012330", "003670", "035720", "247540", "009830");
+
 	public KisSocketServiceImp() {
 		this.client = new ReactorNettyWebSocketClient();
 	}
 
 	@Override
-	public Mono<Void> sendMessageToWebSocketServer() {
+	public Mono<Void> sendMessageToWebSocketServerToRealTimePrice() {
 		URI uri = UriComponentsBuilder.fromUriString(
 				KisUrls.REAL_TIME_EXECUTION_PRICE_PATH.getFullUrl()).build().toUri();
 
 		return client.execute(uri, session -> {
 			// JSON 메시지 생성
-			List<String> messages = createMessages();
+			List<String> messages = createRealPriceMessages();
 
 			Flux<WebSocketMessage> message = Flux.fromIterable(messages)
 					.map(session::textMessage);
@@ -68,24 +75,89 @@ public class KisSocketServiceImp implements KisSocketService {
 		});
 	}
 
-	private List<String> createMessages() {
-		// 실시간 주식 리스트 20개
-		List<String> stockCodes = List.of(
-				"005930", "000660", "373220", "207940", "005380",
-				"005935", "000270", "068270", "005490", "105560",
-				"035420", "006400", "051910", "028260", "055550",
-				"012330", "003670", "035720", "247540", "009830",
-				"086790", "000810", "010950", "011170", "034730");
-		List<String> messages = new ArrayList<>();
+	@Override
+	public Mono<Void> sendMessageToWebSocketServerToAskingPrice() {
+		URI uri = UriComponentsBuilder.fromUriString(
+				KisUrls.REAL_TIME_ASKING_PRICE_PATH.getRealFullUrl()).build().toUri();
 
-		for (String stockCode : stockCodes) {
-			messages.add(getJsonMessage(stockCode));
-		}
+		return client.execute(uri, session -> {
+			// JSON 메시지 생성
+			List<String> messages = createAskPriceJsonMessages();
 
-		return messages;
+			Flux<WebSocketMessage> message = Flux.fromIterable(messages)
+					.map(session::textMessage);
+
+			return session.send(message)
+					.thenMany(session.receive()
+							.doOnNext(data -> {
+								String receivedMessage = data.getPayloadAsText();
+								String[] parseReceivedMessage = receivedMessage.split("\\^");
+
+								// 데이터가 없는 경우
+								if (parseReceivedMessage.length < 2) {
+									return;
+								}
+
+								String stockCode = parseReceivedMessage[0].split("\\|")[3];
+
+								String askPriceInfo = String.format("%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s",
+										parseReceivedMessage[3],    // 매도 호가 1
+										parseReceivedMessage[4],    // 매도 호가 2
+										parseReceivedMessage[5],    // 매도 호가 3
+										parseReceivedMessage[23],   // 매도 호가 1 잔량
+										parseReceivedMessage[24],   // 매도 호가 2 잔량
+										parseReceivedMessage[25],   // 매도 호가 3 잔량
+										parseReceivedMessage[13],   // 매수 호가 1
+										parseReceivedMessage[14],   // 매수 호가 2
+										parseReceivedMessage[15],   // 매수 호가 3
+										parseReceivedMessage[33],   // 매수 호가 1 잔량
+										parseReceivedMessage[34],   // 매수 호가 2 잔량
+										parseReceivedMessage[35],   // 매수 호가 3 잔량
+										parseReceivedMessage[43],   // 총 매도 호가 잔량
+										parseReceivedMessage[44]    // 총 매수 호가 잔량
+								);
+
+								reactiveRedisService.save("askPrice-"+stockCode, askPriceInfo).subscribe();
+							}))
+					.then();
+		});
 	}
 
-	private String getJsonMessage(String stockCode) {
+	private List<String> createRealPriceMessages() {
+		// 실시간 주식 리스트 20개
+		return stockCodes.stream()
+				.map(this::createJsonMessageToRealTimePrice)
+				.toList();
+	}
+
+	private List<String> createAskPriceJsonMessages() {
+		// 실시간 주식 리스트 20개
+		return stockCodes.stream()
+				.map(this::crateJsonMessageToAskingPrice)
+				.toList();
+	}
+
+	private String crateJsonMessageToAskingPrice(String stockCode) {
+		return "{\n"
+				+ "         \"header\":\n"
+				+ "         {\n"
+				+ "                  \"approval_key\": \"" + socketKey + "\",\n"
+				+ "                  \"custtype\":\"P\",\n"
+				+ "                  \"tr_type\":\"1\",\n"
+				+ "                  \"content-type\":\"utf-8\"\n"
+				+ "         },\n"
+				+ "         \"body\":\n"
+				+ "         {\n"
+				+ "                  \"input\":\n"
+				+ "                  {\n"
+				+ "                           \"tr_id\":\"H0STASP0\",\n"
+				+ "                           \"tr_key\":\"" + stockCode + "\"\n"
+				+ "                  }\n"
+				+ "         }\n"
+				+ "}";
+	}
+
+	private String createJsonMessageToRealTimePrice(String stockCode) {
 		return "{\n"
 				+ "         \"header\":\n"
 				+ "         {\n"
