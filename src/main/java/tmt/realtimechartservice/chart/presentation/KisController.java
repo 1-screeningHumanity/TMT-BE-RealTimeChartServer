@@ -2,6 +2,7 @@ package tmt.realtimechartservice.chart.presentation;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
@@ -12,6 +13,12 @@ import tmt.realtimechartservice.chart.service.RedisPubSubServiceImp;
 
 @RestController
 @RequiredArgsConstructor
+@CrossOrigin(origins =
+        {
+                "https://screeninghumanity.store/",
+                "http://localhost:3000",
+                "https://localhost:3000"
+        })
 public class KisController {
 	private final KisSocketService kisSocketService;
 	private final RedisPubSubServiceImp redisPubSubServiceImp;
