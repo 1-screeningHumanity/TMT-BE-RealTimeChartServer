@@ -1,0 +1,14 @@
+spring:
+  application:
+    name: realtime-server
+
+  data:
+    redis:
+      host: ${REDIS_DB}
+      port: ${REDIS_PORT}
+kis:
+  key:
+    socketKey: ${KIS_SOCKEY_KEY}
+
+server:
+  port: 9000
