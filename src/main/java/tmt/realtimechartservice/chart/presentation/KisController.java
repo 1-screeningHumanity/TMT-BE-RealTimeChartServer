@@ -36,4 +36,9 @@ public class KisController {
 	public Flux<String> streamAskBid(@PathVariable("stockCode") String stockCode){
 		return redisPubSubServiceImp.getAskPrice(stockCode);
 	}
+
+	@GetMapping
+	public String healthCheck() {
+		return "ok";
+	}
 }
