@@ -8,7 +8,7 @@ spring:
       port: ${REDIS_PORT}
 kis:
   key:
-    socketKey: ${KIS_SOCKEY_KEY}
+    socketKey: ${KIS_SOCKET_KEY}
 
 server:
   port: 9000
