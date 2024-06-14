@@ -13,12 +13,7 @@ import tmt.realtimechartservice.chart.service.RedisPubSubServiceImp;
 
 @RestController
 @RequiredArgsConstructor
-@CrossOrigin(origins =
-        {
-                "https://screeninghumanity.store/",
-                "http://localhost:3000",
-                "https://localhost:3000"
-        })
+@CrossOrigin(origins = "*")
 public class KisController {
 	private final KisSocketService kisSocketService;
 	private final RedisPubSubServiceImp redisPubSubServiceImp;
