@@ -9,19 +9,25 @@ import reactor.core.publisher.Mono;
 @RequiredArgsConstructor
 public class ReactiveRedisServiceImp implements ReactiveRedisService {
 
-	private static final String REDIS_KEY_PREFIX = "stock:";
+	private static final String PRICE_PREFIX = "stock:";
+	private static final String ASKING_PRICE_PREFIX = "stock:askPrice-";
 	private static final String CHANNEL = "reactive_stock";
 
 	private final ReactiveRedisTemplate<String, String> reactiveRedisTemplate;
 
 	@Override
 	public Mono<Void> save(String key, String value) {
-		return reactiveRedisTemplate.opsForValue().set(REDIS_KEY_PREFIX + key, value)
-				.then(reactiveRedisTemplate.convertAndSend(CHANNEL, REDIS_KEY_PREFIX + key + ":" + value).then());
+		return reactiveRedisTemplate.opsForValue().set(PRICE_PREFIX + key, value)
+				.then(reactiveRedisTemplate.convertAndSend(CHANNEL, PRICE_PREFIX + key + ":" + value).then());
 	}
 
 	@Override
-	public Mono<String> get(String key) {
-		return reactiveRedisTemplate.opsForValue().get(REDIS_KEY_PREFIX + key);
+	public Mono<String> getPrice(String key) {
+		return reactiveRedisTemplate.opsForValue().get(PRICE_PREFIX + key);
+	}
+
+	@Override
+	public Mono<String> getAskPrice(String key) {
+		return reactiveRedisTemplate.opsForValue().get(ASKING_PRICE_PREFIX + key);
 	}
 }
