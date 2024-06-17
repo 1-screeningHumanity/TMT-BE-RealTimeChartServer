@@ -37,6 +37,30 @@ public class KisController {
 		return redisPubSubServiceImp.getAskPrice(stockCode);
 	}
 
+	// todo : remove
+	@GetMapping("/start/price")
+	public void startRealTimePrice() {
+		kisSocketService.startPrice();
+	}
+
+	// todo : remove
+	@GetMapping("/stop/price")
+	public void stopRealTimePrice() {
+		kisSocketService.stopPrice();
+	}
+
+	// todo : remove
+	@GetMapping("/start/ask-price")
+	public void startAskPrice() {
+		kisSocketService.startAskPrice();
+	}
+
+	// todo : remove
+	@GetMapping("/stop/ask-price")
+	public void stopAskPrice() {
+		kisSocketService.stopAskPrice();
+	}
+
 	@GetMapping
 	public String healthCheck() {
 		return "ok";
