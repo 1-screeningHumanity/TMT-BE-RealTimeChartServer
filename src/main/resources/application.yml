@@ -10,5 +10,8 @@ kis:
   key:
     socketKey: ${KIS_SOCKET_KEY}
 
+kafka:
+  bootstrap-server: ${KAFKA_SERVER}
+
 server:
   port: 9000
