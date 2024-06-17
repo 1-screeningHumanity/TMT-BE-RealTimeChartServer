@@ -3,16 +3,21 @@ package tmt.realtimechartservice.chart.service;
 import java.net.URI;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.socket.WebSocketMessage;
+import org.springframework.web.reactive.socket.WebSocketSession;
 import org.springframework.web.reactive.socket.client.ReactorNettyWebSocketClient;
 import org.springframework.web.util.UriComponentsBuilder;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import tmt.realtimechartservice.common.KisUrls;
 
+@Slf4j
 @Service
 public class KisSocketServiceImp implements KisSocketService {
 
@@ -22,6 +27,8 @@ public class KisSocketServiceImp implements KisSocketService {
 
 	@Autowired
 	private KafkaProducerService kafkaProducerService;
+	private final AtomicReference<WebSocketSession> webSocketSessionRefPrice = new AtomicReference<>();
+	private final AtomicReference<WebSocketSession> webSocketSessionRefAskPrice = new AtomicReference<>();
 
 	@Value("${kis.key.socketKey}")
 	private String socketKey;
@@ -38,11 +45,51 @@ public class KisSocketServiceImp implements KisSocketService {
 	}
 
 	@Override
+	@Scheduled(cron = "0 55 8 * * MON-FRI")
+	public void startPrice() {
+		log.info("Start sendMessageToWebSocketServerToRealTimePrice");
+		if (webSocketSessionRefPrice.get() == null) {
+			sendMessageToWebSocketServerToRealTimePrice().subscribe();
+		}
+	}
+
+	@Override
+	@Scheduled(cron = "0 35 15 * * MON-FRI")
+	public void stopPrice() {
+		log.info("Stop sendMessageToWebSocketServerToRealTimePrice");
+		WebSocketSession session = webSocketSessionRefPrice.getAndSet(null);
+		if (session != null && session.isOpen()) {
+			session.close().subscribe();
+		}
+	}
+
+	@Override
+	@Scheduled(cron = "0 55 8 * * MON-FRI")
+	public void startAskPrice() {
+		log.info("Start sendMessageToWebSocketServerToAskingPrice");
+		if (webSocketSessionRefAskPrice.get() == null) {
+			sendMessageToWebSocketServerToAskingPrice().subscribe();
+		}
+	}
+
+	@Override
+	@Scheduled(cron = "0 35 15 * * MON-FRI")
+	public void stopAskPrice() {
+		log.info("Stop sendMessageToWebSocketServerToAskingPrice");
+		WebSocketSession session = webSocketSessionRefAskPrice.getAndSet(null);
+		if (session != null && session.isOpen()) {
+			session.close().subscribe();
+		}
+	}
+
+	@Override
 	public Mono<Void> sendMessageToWebSocketServerToRealTimePrice() {
 		URI uri = UriComponentsBuilder.fromUriString(
 				KisUrls.REAL_TIME_EXECUTION_PRICE_PATH.getFullUrl()).build().toUri();
 
 		return client.execute(uri, session -> {
+			webSocketSessionRefPrice.set(session);  // 세션 저장
+
 			// JSON 메시지 생성
 			List<String> messages = createRealPriceMessages();
 
@@ -80,7 +127,8 @@ public class KisSocketServiceImp implements KisSocketService {
 
 								reactiveRedisService.save(stockCode, stockInfo).subscribe();
 							}))
-					.then();
+					.then()
+					.doFinally(signalType -> webSocketSessionRefPrice.set(null));  // 종료 시 세션 null로 설정
 		});
 	}
 
@@ -90,6 +138,8 @@ public class KisSocketServiceImp implements KisSocketService {
 				KisUrls.REAL_TIME_ASKING_PRICE_PATH.getRealFullUrl()).build().toUri();
 
 		return client.execute(uri, session -> {
+			webSocketSessionRefAskPrice.set(session);  // 세션 저장
+
 			// JSON 메시지 생성
 			List<String> messages = createAskPriceJsonMessages();
 
@@ -109,7 +159,8 @@ public class KisSocketServiceImp implements KisSocketService {
 
 								String stockCode = parseReceivedMessage[0].split("\\|")[3];
 
-								String askPriceInfo = String.format("%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s",
+								String askPriceInfo = String.format(
+										"%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s",
 										parseReceivedMessage[3],    // 매도 호가 1
 										parseReceivedMessage[4],    // 매도 호가 2
 										parseReceivedMessage[5],    // 매도 호가 3
@@ -126,9 +177,10 @@ public class KisSocketServiceImp implements KisSocketService {
 										parseReceivedMessage[44]    // 총 매수 호가 잔량
 								);
 
-								reactiveRedisService.save("askPrice-"+stockCode, askPriceInfo).subscribe();
+								reactiveRedisService.save("askPrice-" + stockCode, askPriceInfo).subscribe();
 							}))
-					.then();
+					.then()
+					.doFinally(signalType -> webSocketSessionRefAskPrice.set(null));  // 종료 시 세션 null로 설정
 		});
 	}
 
