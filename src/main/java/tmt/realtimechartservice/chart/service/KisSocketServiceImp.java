@@ -1,7 +1,7 @@
 package tmt.realtimechartservice.chart.service;
 
 import java.net.URI;
-import java.util.ArrayList;
+import java.time.LocalDateTime;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -19,6 +19,9 @@ public class KisSocketServiceImp implements KisSocketService {
 	private final ReactorNettyWebSocketClient client;
 	@Autowired
 	private ReactiveRedisService reactiveRedisService;
+
+	@Autowired
+	private KafkaProducerService kafkaProducerService;
 
 	@Value("${kis.key.socketKey}")
 	private String socketKey;
@@ -60,7 +63,7 @@ public class KisSocketServiceImp implements KisSocketService {
 								String stockCode = parseReceivedMessage[0].split("\\|")[3];
 
 								// stck_prpr + ":" + prdy_ctrt + ":" + stck_oprc + ":" + stck_hgpr + ":" + stck_lwpr
-								// 주식 현자가 : 전일 대비율 : 주식 시가 : 주식 고가 : 주식 저가
+								// 주식 현재가 : 전일 대비율 : 주식 시가 : 주식 고가 : 주식 저가
 								String stockInfo = String.format("%s:%s:%s:%s:%s",
 										parseReceivedMessage[2],
 										parseReceivedMessage[5],
@@ -68,8 +71,14 @@ public class KisSocketServiceImp implements KisSocketService {
 										parseReceivedMessage[8],
 										parseReceivedMessage[9]);
 
-								reactiveRedisService.save(stockCode, stockInfo).subscribe();
+								// Trade 카프카 전송
+								kafkaProducerService.sendTrade("{\n"
+										+ "  \"stockCode\":\"" + stockCode + "\",\n"
+										+ "  \"price\":\"" + parseReceivedMessage[2] + "\",\n"
+										+ "  \"date\":\"" + LocalDateTime.now().toString() + "\"\n"
+										+ "}");
 
+								reactiveRedisService.save(stockCode, stockInfo).subscribe();
 							}))
 					.then();
 		});
