@@ -6,6 +6,7 @@ spring:
     redis:
       host: ${REDIS_DB}
       port: ${REDIS_PORT}
+      password: ${REDIS_PASSWORD}
 kis:
   key:
     socketKey: ${KIS_SOCKET_KEY}
