@@ -2,6 +2,7 @@ package tmt.realtimechartservice.chart.service;
 
 import java.net.URI;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import lombok.extern.slf4j.Slf4j;
@@ -118,11 +119,14 @@ public class KisSocketServiceImp implements KisSocketService {
 										parseReceivedMessage[8],
 										parseReceivedMessage[9]);
 
+                                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSSSSS");
+                                String formattedDateTime = LocalDateTime.now().format(formatter);
+
 								// Trade 카프카 전송
 								kafkaProducerService.sendTrade("{\n"
 										+ "  \"stockCode\":\"" + stockCode + "\",\n"
 										+ "  \"price\":\"" + parseReceivedMessage[2] + "\",\n"
-										+ "  \"date\":\"" + LocalDateTime.now().toString() + "\"\n"
+										+ "  \"date\":\"" + formattedDateTime + "\"\n"
 										+ "}");
 
 								reactiveRedisService.save(stockCode, stockInfo).subscribe();
