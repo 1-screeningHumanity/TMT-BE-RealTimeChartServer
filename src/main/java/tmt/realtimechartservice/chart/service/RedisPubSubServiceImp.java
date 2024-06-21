@@ -43,7 +43,7 @@ public class RedisPubSubServiceImp implements RedisPubSubService {
 						.doOnCancel(() -> log.info("Price Client disconnected2"))
 				)
 				.doOnCancel(() -> log.info("Price Client disconnected1"))
-				.doFinally(signalType -> log.info("Stream finally closed with signal type: {}", signalType))
+				.doFinally(signalType -> log.info("Stream finally closed with signal type: {}", signalType));
 	}
 
 	@Override
