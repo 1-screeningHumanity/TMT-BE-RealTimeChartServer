@@ -37,7 +37,6 @@ public class RedisPubSubServiceImp implements RedisPubSubService {
 						.filter(message -> message.startsWith("stock:" + stockCode))
 						.mergeWith(Flux.interval(Duration.ofSeconds(10))
 								.map(tick -> "keep-alive")
-								.onBackpressureDrop()
 						)
 						.doOnError(error -> log.warn("Error in getRealTimePrice stream: {}",
 								error.getMessage(), error))
@@ -45,8 +44,6 @@ public class RedisPubSubServiceImp implements RedisPubSubService {
 				)
 				.doOnCancel(() -> log.info("Price Client disconnected1"))
 				.doFinally(signalType -> log.info("Stream finally closed with signal type: {}", signalType))
-				.takeUntilOther(exchange.getResponse().writeWith(Mono.never()));
-
 	}
 
 	@Override
@@ -55,9 +52,7 @@ public class RedisPubSubServiceImp implements RedisPubSubService {
 				.concatWith(sink.asFlux()
 						.filter(message -> message.startsWith("stock:askPrice-" + stockCode))
 						.mergeWith(Flux.interval(Duration.ofSeconds(10))
-								.map(tick -> "keep-alive")
-								.onBackpressureDrop())
-						.takeUntilOther(exchange.getResponse().writeWith(Mono.never()))
+								.map(tick -> "keep-alive"))
 						.doOnError(error -> log.warn("Error in getAskPrice stream: {}",
 								error.getMessage(), error))  // 에러 발생 시 로그 출력
 						.doOnCancel(() -> log.info(
