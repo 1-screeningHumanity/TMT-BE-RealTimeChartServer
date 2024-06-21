@@ -33,22 +33,23 @@ public class RedisPubSubServiceImp implements RedisPubSubService {
 	@Override
 	public Flux<String> getRealTimePrice(String stockCode, ServerWebExchange exchange) {
 		return reactiveRedisService.getPrice(stockCode)
+				.doOnCancel(() -> log.info("Price Client disconnected1"))
 				.concatWith(sink.asFlux()
 						.filter(message -> message.startsWith("stock:" + stockCode))
 						.mergeWith(Flux.interval(Duration.ofSeconds(10))
 								.map(tick -> "keep-alive")
 								.onBackpressureDrop()
 						)
-						.takeUntilOther(exchange.getResponse().writeWith(Mono.never()))
 						.doOnError(error -> log.warn("Error in getRealTimePrice stream: {}",
-								error.getMessage(), error))  // 에러 발생 시 로그 출력
-						.doOnCancel(() -> log.info(
-								"Price Client disconnected"))); // 클라이언트 연결 해제 시 로그 출력)
+								error.getMessage(), error))
+						.doOnCancel(() -> log.info("Price Client disconnected2"))
+				)
+				.takeUntilOther(exchange.getResponse().writeWith(Mono.never()));
 
 	}
 
 	@Override
-	public Flux<String> getAskPrice(String stockCode,ServerWebExchange exchange) {
+	public Flux<String> getAskPrice(String stockCode, ServerWebExchange exchange) {
 		return reactiveRedisService.getAskPrice(stockCode)
 				.concatWith(sink.asFlux()
 						.filter(message -> message.startsWith("stock:askPrice-" + stockCode))
