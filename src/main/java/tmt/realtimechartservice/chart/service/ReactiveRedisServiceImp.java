@@ -23,11 +23,13 @@ public class ReactiveRedisServiceImp implements ReactiveRedisService {
 
 	@Override
 	public Mono<String> getPrice(String key) {
-		return reactiveRedisTemplate.opsForValue().get(PRICE_PREFIX + key);
+		return reactiveRedisTemplate.opsForValue().get(PRICE_PREFIX + key)
+				.map(value -> PRICE_PREFIX + key + ":" + value);
 	}
 
 	@Override
 	public Mono<String> getAskPrice(String key) {
-		return reactiveRedisTemplate.opsForValue().get(ASKING_PRICE_PREFIX + key);
+		return reactiveRedisTemplate.opsForValue().get(ASKING_PRICE_PREFIX + key)
+				.map(value -> ASKING_PRICE_PREFIX + key + ":" + value);
 	}
 }
