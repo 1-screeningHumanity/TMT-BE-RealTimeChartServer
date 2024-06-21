@@ -33,7 +33,6 @@ public class RedisPubSubServiceImp implements RedisPubSubService {
 	@Override
 	public Flux<String> getRealTimePrice(String stockCode, ServerWebExchange exchange) {
 		return reactiveRedisService.getPrice(stockCode)
-				.doOnCancel(() -> log.info("Price Client disconnected1"))
 				.concatWith(sink.asFlux()
 						.filter(message -> message.startsWith("stock:" + stockCode))
 						.mergeWith(Flux.interval(Duration.ofSeconds(10))
@@ -44,6 +43,8 @@ public class RedisPubSubServiceImp implements RedisPubSubService {
 								error.getMessage(), error))
 						.doOnCancel(() -> log.info("Price Client disconnected2"))
 				)
+				.doOnCancel(() -> log.info("Price Client disconnected1"))
+				.doFinally(signalType -> log.info("Stream finally closed with signal type: {}", signalType))
 				.takeUntilOther(exchange.getResponse().writeWith(Mono.never()));
 
 	}
