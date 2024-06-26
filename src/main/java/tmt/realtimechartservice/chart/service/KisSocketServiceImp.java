@@ -46,7 +46,7 @@ public class KisSocketServiceImp implements KisSocketService {
 	}
 
 	@Override
-	@Scheduled(cron = "0 55 8 * * MON-FRI")
+	@Scheduled(cron = "0 0 9 * * MON-FRI")
 	public void startPrice() {
 		log.info("Start sendMessageToWebSocketServerToRealTimePrice");
 		if (webSocketSessionRefPrice.get() == null) {
