@@ -6,7 +6,6 @@ import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import tmt.realtimechartservice.chart.service.KisSocketService;
@@ -30,18 +29,16 @@ public class KisController {
 
 	@GetMapping(value = "/stream/{stockCode}", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
 	public Flux<String> streamRealTime(
-			@PathVariable("stockCode") String stockCode,
-			ServerWebExchange exchange
-	){
-		return redisPubSubServiceImp.getRealTimePrice(stockCode,exchange);
+			@PathVariable("stockCode") String stockCode
+	) {
+		return redisPubSubServiceImp.getRealTimePrice(stockCode);
 	}
 
 	@GetMapping(value = "/stream/{stockCode}/asking-price", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
 	public Flux<String> streamAskBid(
-			@PathVariable("stockCode") String stockCode,
-			ServerWebExchange exchange
+			@PathVariable("stockCode") String stockCode
 	){
-		return redisPubSubServiceImp.getAskPrice(stockCode,exchange);
+		return redisPubSubServiceImp.getAskPrice(stockCode);
 	}
 
 	// todo : remove
