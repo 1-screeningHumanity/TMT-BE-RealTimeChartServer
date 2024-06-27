@@ -23,7 +23,8 @@ public class RedisPubSubServiceImp implements RedisPubSubService {
 
 		this.sharedFlux = listenerContainer.receive(reactiveStock)
 				.map(ReactiveSubscription.Message::getMessage)
-				.share()
+				.publish()
+				.autoConnect(0)
 				.doOnSubscribe(test -> log.info("receive start"))
 				.doOnCancel(() -> log.info("receive cancel"));
 	}
